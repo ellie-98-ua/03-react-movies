@@ -7,20 +7,23 @@ interface FetchMoviesResponse {
   results: Movie[];
 }
 
-export async function fetchMovies(query: string): Promise<Movie[]> {
-  const response = await axios.get<FetchMoviesResponse>(
-    `${BASE_URL}/search/movie`,
-    {
-      params: {
-        query,
-        language: "en-US",
-        page: 1,
-      },
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_TMDB_TOKEN}`,
-      },
-    }
-  );
+const token = import.meta.env.VITE_TMDB_TOKEN as string | undefined;
 
-  return response.data.results;
+if (!token) {
+  console.warn("TMDB token is missing. Set VITE_TMDB_TOKEN in environment.");
+}
+
+const api = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    Authorization: token ? `Bearer ${token}` : "",
+    Accept: "application/json",
+  },
+});
+
+export async function fetchMovies(query: string): Promise<Movie[]> {
+  const { data } = await api.get<FetchMoviesResponse>("/search/movie", {
+    params: { query, language: "en-US", page: 1 },
+  });
+  return data.results;
 }
